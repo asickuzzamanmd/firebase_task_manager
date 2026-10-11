@@ -3,33 +3,47 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
+  // Current User getter
   User? get currentUser => _auth.currentUser;
+
+  // Stream for auth changes
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // Email/Password Sign Up
-  Future<UserCredential> signUp(String email, String password) async {
-    return await _auth.createUserWithEmailAndPassword(
-      email: email.trim(),
-      password: password.trim(),
-    );
-  }
-
-  // Email/Password Sign In
-  Future<UserCredential> signIn(String email, String password) async {
+  // Sign In with Email & Password
+  Future<UserCredential?> signInWithEmail(String email, String password) async {
     return await _auth.signInWithEmailAndPassword(
-      email: email.trim(),
-      password: password.trim(),
+      email: email,
+      password: password,
     );
   }
 
-  // Google Sign In
+  // Also support login()
+  Future<UserCredential?> login(String email, String password) async {
+    return await signInWithEmail(email, password);
+  }
+
+  // Sign Up with Email & Password
+  Future<UserCredential?> signUpWithEmail(String email, String password) async {
+    return await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+  }
+
+  // Support signUp() directly for signup_screen.dart
+  Future<UserCredential?> signUp(String email, String password) async {
+    return await signUpWithEmail(email, password);
+  }
+
+  // Google Sign-In
   Future<UserCredential?> signInWithGoogle() async {
-    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+    final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
     if (googleUser == null) return null;
 
     final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-    final OAuthCredential credential = GoogleAuthProvider.credential(
+    final AuthCredential credential = GoogleAuthProvider.credential(
       accessToken: googleAuth.accessToken,
       idToken: googleAuth.idToken,
     );
@@ -39,7 +53,7 @@ class AuthService {
 
   // Sign Out
   Future<void> signOut() async {
-    await GoogleSignIn().signOut();
+    await _googleSignIn.signOut();
     await _auth.signOut();
   }
 }
